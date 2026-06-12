@@ -1,31 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Font, Radius, Shadow } from '../utils/theme';
+import { Colors, Font, Radius } from '../utils/theme';
 import { KNNResultado } from '../utils/knn';
 
-interface Props {
-  resultado: KNNResultado;
+interface Props { resultado: KNNResultado }
+
+function scoreColor(s: number) {
+  return s >= 75 ? Colors.scoreHigh : s >= 45 ? Colors.scoreMid : Colors.scoreLow;
 }
 
-function scoreColor(score: number): string {
-  if (score >= 75) return Colors.scoreHigh;
-  if (score >= 45) return Colors.scoreMid;
-  return Colors.scoreLow;
-}
-
-function ScoreBar({ label, score, icon }: { label: string; score: number; icon: string }) {
+function ScoreBar({ label, score, detail }: { label: string; score: number; detail: string }) {
   const cor = scoreColor(score);
   return (
     <View style={styles.barRow}>
-      <Text style={styles.barIcon}>{icon}</Text>
-      <View style={styles.barInfo}>
-        <View style={styles.barLabelRow}>
-          <Text style={styles.barLabel}>{label}</Text>
-          <Text style={[styles.barValue, { color: cor }]}>{score}%</Text>
+      <View style={styles.barMeta}>
+        <Text style={styles.barLabel}>{label}</Text>
+        <Text style={styles.barDetail}>{detail}</Text>
+      </View>
+      <View style={styles.barRight}>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${score}%` as any, backgroundColor: cor }]} />
         </View>
-        <View style={styles.trackBg}>
-          <View style={[styles.trackFill, { width: `${score}%` as any, backgroundColor: cor }]} />
-        </View>
+        <Text style={[styles.barScore, { color: cor }]}>{score}%</Text>
       </View>
     </View>
   );
@@ -33,139 +29,83 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 
 export default function KNNScoreCard({ resultado }: Props) {
   const { scoreGeral, scoreLocalizacao, scoreHorario, scoreDestino } = resultado;
-  const corGeral = scoreColor(scoreGeral);
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com score geral */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.knnLabel}>Análise KNN</Text>
-          <Text style={styles.knnSub}>K-Nearest Neighbours</Text>
+          <Text style={styles.title}>Análise KNN</Text>
+          <Text style={styles.subtitle}>K-Nearest Neighbours · distância euclidiana normalizada</Text>
         </View>
-        <View style={[styles.scoreBadge, { backgroundColor: corGeral }]}>
-          <Text style={styles.scoreNum}>{scoreGeral}</Text>
-          <Text style={styles.scorePct}>%</Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeNum}>{scoreGeral}</Text>
+          <Text style={styles.badgePct}>%</Text>
         </View>
       </View>
 
-      {/* Barras por atributo */}
+      <View style={styles.divider} />
+
       <View style={styles.bars}>
-        <ScoreBar label="Localização de origem" score={scoreLocalizacao} icon="📍" />
-        <ScoreBar label="Compatibilidade de horário" score={scoreHorario} icon="🕒" />
-        <ScoreBar label="Destino compatível"   score={scoreDestino}    icon="🏁" />
+        <ScoreBar label="Localização"  score={scoreLocalizacao} detail="peso 40%" />
+        <ScoreBar label="Horário"      score={scoreHorario}     detail="peso 35%" />
+        <ScoreBar label="Destino"      score={scoreDestino}     detail="peso 25%" />
       </View>
 
-      {/* Pesos */}
-      <View style={styles.weightsRow}>
-        <Text style={styles.weightChip}>Localização · 40%</Text>
-        <Text style={styles.weightChip}>Horário · 35%</Text>
-        <Text style={styles.weightChip}>Destino · 25%</Text>
-      </View>
+      <Text style={styles.note}>
+        Score = distância euclidiana ponderada entre seu perfil e a oferta. Quanto maior, mais compatível.
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: Radius.lg,
+    backgroundColor: Colors.bg,
+    borderRadius: Radius.md,
     padding: 16,
-    marginTop: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 14,
   },
-  knnLabel: {
-    fontSize: Font.md,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  knnSub: {
-    fontSize: Font.xs,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  scoreBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  title: { fontSize: Font.md, fontWeight: '700', color: Colors.textPrimary },
+  subtitle: { fontSize: Font.xs, color: Colors.textMuted, marginTop: 3, maxWidth: 200 },
+  badge: {
+    backgroundColor: Colors.primary,
+    width: 50, height: 50,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
-  scoreNum: {
-    fontSize: Font.xl,
-    fontWeight: '800',
-    color: Colors.white,
-  },
-  scorePct: {
-    fontSize: Font.xs,
-    color: Colors.white,
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  bars: {
-    gap: 10,
-  },
-  barRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  barIcon: {
-    fontSize: 16,
-    width: 22,
-    textAlign: 'center',
-  },
-  barInfo: {
-    flex: 1,
-  },
-  barLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  barLabel: {
-    fontSize: Font.xs,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  barValue: {
-    fontSize: Font.xs,
-    fontWeight: '700',
-  },
-  trackBg: {
-    height: 6,
+  badgeNum: { fontSize: Font.xl, fontWeight: '700', color: Colors.white },
+  badgePct: { fontSize: Font.xs, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  divider: { height: 1, backgroundColor: Colors.border, marginBottom: 14 },
+  bars: { gap: 12 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  barMeta: { width: 90 },
+  barLabel: { fontSize: Font.sm, fontWeight: '600', color: Colors.textPrimary },
+  barDetail: { fontSize: Font.xs, color: Colors.textMuted, marginTop: 1 },
+  barRight: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  track: {
+    flex: 1, height: 5,
     backgroundColor: Colors.border,
-    borderRadius: Radius.full,
-    overflow: 'hidden',
+    borderRadius: 3, overflow: 'hidden',
   },
-  trackFill: {
-    height: 6,
-    borderRadius: Radius.full,
-  },
-  weightsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 12,
-  },
-  weightChip: {
+  fill: { height: 5, borderRadius: 3 },
+  barScore: { fontSize: Font.sm, fontWeight: '700', width: 36, textAlign: 'right' },
+  note: {
     fontSize: Font.xs,
-    color: Colors.primary,
-    backgroundColor: Colors.white,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-    fontWeight: '600',
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-    overflow: 'hidden',
+    color: Colors.textMuted,
+    lineHeight: 17,
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
   },
 });

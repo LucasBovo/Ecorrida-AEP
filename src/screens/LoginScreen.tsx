@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { Colors, Font, Radius, Shadow } from '../utils/theme';
+import { Colors, Font, Radius } from '../utils/theme';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = () => {
     if (!email.trim() || !senha.trim()) {
-      setErro('Preencha e-mail/RA e senha para continuar.');
+      setErro('Preencha e-mail e senha para continuar.');
       return;
     }
     setErro('');
@@ -25,23 +25,24 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+
+        {/* Marca */}
         <View style={styles.brand}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoEmoji}>🌿</Text>
+          <View style={styles.logoMark}>
+            <View style={styles.logoInner} />
           </View>
-          <Text style={styles.appName}>Ecorrida</Text>
-          <Text style={styles.tagline}>Caronas inteligentes e sustentáveis</Text>
+          <Text style={styles.appName}>ecorrida</Text>
+          <Text style={styles.tagline}>Caronas universitárias inteligentes</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Bem-vindo de volta</Text>
-
+        {/* Formulário */}
+        <View style={styles.form}>
           {erro ? <Text style={styles.erroMsg}>{erro}</Text> : null}
 
           <Text style={styles.label}>E-mail ou RA</Text>
           <TextInput
             style={styles.input}
-            placeholder="seuemail@uni.edu  ou  25362250-2"
+            placeholder="seura@unicesumar.edu.br"
             placeholderTextColor={Colors.textMuted}
             value={email}
             onChangeText={(v) => { setEmail(v); setErro(''); }}
@@ -52,14 +53,14 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.label}>Senha</Text>
           <TextInput
             style={styles.input}
-            placeholder="••••••••"
+            placeholder="Digite sua senha"
             placeholderTextColor={Colors.textMuted}
             value={senha}
             onChangeText={(v) => { setSenha(v); setErro(''); }}
             secureTextEntry
           />
 
-          <TouchableOpacity style={styles.btn} onPress={handleLogin} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.btn} onPress={handleLogin} activeOpacity={0.9}>
             <Text style={styles.btnText}>Entrar</Text>
           </TouchableOpacity>
 
@@ -68,92 +69,97 @@ export default function LoginScreen({ navigation }: any) {
             onPress={() => navigation.navigate('Register')}
           >
             <Text style={styles.linkText}>
-              Ainda não tem conta?{' '}
+              Ainda não tem conta?{'  '}
               <Text style={styles.linkBold}>Cadastre-se</Text>
             </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.odsBadge}>
-          <Text style={styles.odsText}>🌍  ODS 11 – Cidades Sustentáveis</Text>
-        </View>
+        {/* Rodapé ODS */}
+        <Text style={styles.footer}>ODS 11 · Cidades e Comunidades Sustentáveis</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primary },
+  root: { flex: 1, backgroundColor: Colors.white },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
+    paddingHorizontal: 32,
+    paddingVertical: 56,
   },
-  brand: { alignItems: 'center', marginBottom: 32 },
-  logoCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: Colors.accent,
+  brand: { alignItems: 'center', marginBottom: 48 },
+  logoMark: {
+    width: 52, height: 52,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12, shadowRadius: 12, elevation: 6,
+    marginBottom: 16,
   },
-  logoEmoji: { fontSize: 40 },
+  logoInner: {
+    width: 22, height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.accent,
+  },
   appName: {
-    fontSize: Font.hero, fontWeight: '800',
-    color: Colors.white, letterSpacing: 1,
+    fontSize: Font.hero,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: Font.md, color: '#A8CDE6',
-    marginTop: 6, textAlign: 'center',
+    fontSize: Font.sm,
+    color: Colors.textMuted,
+    marginTop: 6,
   },
-  card: {
-    width: '100%', maxWidth: 360,
-    backgroundColor: Colors.white,
-    borderRadius: Radius.xl, padding: 28,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12, shadowRadius: 12, elevation: 6,
-  },
-  cardTitle: {
-    fontSize: Font.xl, fontWeight: '700',
-    color: Colors.textPrimary, marginBottom: 20,
-  },
+  form: { width: '100%' },
   erroMsg: {
-    fontSize: Font.sm, color: Colors.danger,
-    backgroundColor: '#FDE8E8', borderRadius: Radius.sm,
-    padding: 10, marginBottom: 14,
+    fontSize: Font.sm,
+    color: Colors.danger,
+    backgroundColor: '#FEF2F2',
+    borderRadius: Radius.sm,
+    padding: 12,
+    marginBottom: 16,
   },
   label: {
-    fontSize: Font.sm, fontWeight: '600',
-    color: Colors.textSecondary, marginBottom: 6,
+    fontSize: Font.sm,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    marginTop: 4,
   },
   input: {
     backgroundColor: Colors.bg,
-    borderRadius: Radius.md, padding: 14,
-    fontSize: Font.md, color: Colors.textPrimary,
+    borderRadius: Radius.md,
+    padding: 15,
+    fontSize: Font.md,
+    color: Colors.textPrimary,
     marginBottom: 16,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   btn: {
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.md, padding: 16,
-    alignItems: 'center', marginTop: 4,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08, shadowRadius: 6, elevation: 3,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
   },
   btnText: {
-    color: Colors.white, fontSize: Font.lg,
-    fontWeight: '700', letterSpacing: 0.5,
+    color: Colors.white,
+    fontSize: Font.md,
+    fontWeight: '600',
   },
-  linkBtn: { marginTop: 20, alignItems: 'center' },
-  linkText: { fontSize: Font.md, color: Colors.textSecondary },
-  linkBold: { color: Colors.primary, fontWeight: '700' },
-  odsBadge: {
-    marginTop: 28, paddingHorizontal: 16, paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: Radius.full,
+  linkBtn: { marginTop: 24, alignItems: 'center' },
+  linkText: { fontSize: Font.sm, color: Colors.textMuted },
+  linkBold: { color: Colors.primary, fontWeight: '600' },
+  footer: {
+    fontSize: Font.xs,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginTop: 48,
+    letterSpacing: 0.3,
   },
-  odsText: { fontSize: Font.sm, color: '#A8CDE6' },
 });

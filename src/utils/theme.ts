@@ -1,63 +1,38 @@
-// ─────────────────────────────────────────────
-//  Design tokens do Ecorrida
-// ─────────────────────────────────────────────
-
 export const Colors = {
-  // Primária
-  primary:       '#0A5C8A',   // azul petróleo profundo
-  primaryDark:   '#074570',
-  primaryLight:  '#D6EBF7',
+  primary:      '#0A5C8A',
+  primaryDark:  '#074570',
+  primaryLight: '#EBF4FA',
 
-  // Acento / sustentabilidade
-  accent:        '#1AA065',   // verde esmeralda
-  accentDark:    '#137A4E',
-  accentLight:   '#D4F3E6',
+  accent:       '#1AA065',
+  accentDark:   '#137A4E',
+  accentLight:  '#E8F7F1',
 
-  // Neutros
-  white:         '#FFFFFF',
-  bg:            '#F0F4F8',
-  surface:       '#FFFFFF',
-  border:        '#DDE4EC',
+  white:        '#FFFFFF',
+  bg:           '#F7F8FA',
+  surface:      '#FFFFFF',
+  border:       '#E4E8ED',
+  borderLight:  '#F0F2F5',
 
-  // Texto
-  textPrimary:   '#0D1B2A',
-  textSecondary: '#4A6178',
-  textMuted:     '#8FA3B4',
+  textPrimary:  '#0D1B2A',
+  textSecondary:'#4A6178',
+  textMuted:    '#94A6B8',
 
-  // Status
-  success:       '#1AA065',
-  warning:       '#E8A020',
-  danger:        '#D64045',
+  success:      '#1AA065',
+  warning:      '#D97706',
+  danger:       '#DC2626',
 
-  // KNN scores
-  scoreHigh:     '#1AA065',
-  scoreMid:      '#E8A020',
-  scoreLow:      '#D64045',
+  scoreHigh:    '#1AA065',
+  scoreMid:     '#D97706',
+  scoreLow:     '#DC2626',
 };
 
 export const Radius = {
-  sm:  8,
-  md:  12,
-  lg:  18,
-  xl:  24,
+  xs:   4,
+  sm:   8,
+  md:   12,
+  lg:   16,
+  xl:   20,
   full: 999,
-};
-
-export const Shadow = {
-  sm: {
-    shadowColor: '#0A5C8A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  md: {
-    shadowColor: '#0A5C8A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
-  },
 };
 
 export const Font = {
@@ -66,6 +41,6 @@ export const Font = {
   md:   15,
   lg:   17,
   xl:   20,
-  xxl:  26,
-  hero: 36,
+  xxl:  24,
+  hero: 32,
 };

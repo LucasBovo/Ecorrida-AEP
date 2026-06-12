@@ -21,11 +21,19 @@ export default function RegisterScreen({ navigation }: any) {
       setErro('As senhas não coincidem.'); return;
     }
     if (!/^\d{8}-\d$/.test(ra.trim())) {
-      setErro('RA inválido. Formato: 25362250-2'); return;
+      setErro('RA inválido. Formato esperado: 25362250-2'); return;
     }
     setErro('');
     navigation.navigate('Login');
   };
+
+  const campos = [
+    { label: 'Nome completo',          value: nome,      setter: setNome,      placeholder: 'Gabriel Felipe dos Santos',  keyboard: 'default' as const,       secure: false },
+    { label: 'RA',                     value: ra,        setter: setRA,        placeholder: '25362250-2',                 keyboard: 'default' as const,       secure: false },
+    { label: 'E-mail institucional',   value: email,     setter: setEmail,     placeholder: 'gabriel@unicesumar.edu.br',  keyboard: 'email-address' as const, secure: false },
+    { label: 'Senha',                  value: senha,     setter: setSenha,     placeholder: 'Mínimo 6 caracteres',        keyboard: 'default' as const,       secure: true  },
+    { label: 'Confirmar senha',        value: confirmar, setter: setConfirmar, placeholder: 'Repita a senha',             keyboard: 'default' as const,       secure: true  },
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -33,98 +41,74 @@ export default function RegisterScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backTxt}>← Voltar</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backTxt}>← Voltar</Text>
+        </TouchableOpacity>
 
-        <View style={styles.brand}>
-          <Text style={styles.appName}>Ecorrida</Text>
-          <Text style={styles.tagline}>Crie sua conta universitária</Text>
-        </View>
+        <Text style={styles.title}>Criar conta</Text>
+        <Text style={styles.subtitle}>Estudante UniCesumar · Maringá</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Cadastro</Text>
+        {erro ? <Text style={styles.erroMsg}>{erro}</Text> : null}
 
-          {erro ? <Text style={styles.erroMsg}>{erro}</Text> : null}
+        {campos.map((f) => (
+          <View key={f.label}>
+            <Text style={styles.label}>{f.label}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={f.placeholder}
+              placeholderTextColor={Colors.textMuted}
+              value={f.value}
+              onChangeText={(v) => { f.setter(v); setErro(''); }}
+              keyboardType={f.keyboard}
+              autoCapitalize={f.keyboard === 'email-address' ? 'none' : 'words'}
+              secureTextEntry={f.secure}
+            />
+          </View>
+        ))}
 
-          {[
-            { label: 'Nome completo',         value: nome,     setter: setNome,     placeholder: 'Gabriel Felipe dos Santos',    keyboard: 'default' as const,        secure: false },
-            { label: 'RA (Registro Acadêmico)', value: ra,     setter: setRA,       placeholder: '25362250-2',                   keyboard: 'default' as const,        secure: false },
-            { label: 'E-mail institucional',  value: email,    setter: setEmail,    placeholder: 'gabriel@uni.edu',              keyboard: 'email-address' as const,  secure: false },
-            { label: 'Senha',                 value: senha,    setter: setSenha,    placeholder: '••••••••',                     keyboard: 'default' as const,        secure: true  },
-            { label: 'Confirmar senha',       value: confirmar,setter: setConfirmar,placeholder: '••••••••',                     keyboard: 'default' as const,        secure: true  },
-          ].map((f) => (
-            <View key={f.label}>
-              <Text style={styles.label}>{f.label}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={f.placeholder}
-                placeholderTextColor={Colors.textMuted}
-                value={f.value}
-                onChangeText={(v) => { f.setter(v); setErro(''); }}
-                keyboardType={f.keyboard}
-                autoCapitalize={f.keyboard === 'email-address' ? 'none' : 'words'}
-                secureTextEntry={f.secure}
-              />
-            </View>
-          ))}
+        <TouchableOpacity style={styles.btn} onPress={handleRegister} activeOpacity={0.9}>
+          <Text style={styles.btnText}>Criar conta</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btn} onPress={handleRegister} activeOpacity={0.85}>
-            <Text style={styles.btnText}>Criar conta</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.linkText}>
-              Já tem conta? <Text style={styles.linkBold}>Fazer login</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.linkText}>
+            Já tem conta?{'  '}<Text style={styles.linkBold}>Fazer login</Text>
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primary },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40 },
-  topBar: { width: '100%', paddingTop: 56, paddingBottom: 8 },
-  backBtn: { alignSelf: 'flex-start' },
-  backTxt: { color: '#A8CDE6', fontSize: Font.md, fontWeight: '600' },
-  brand: { alignItems: 'center', marginBottom: 24, marginTop: 8 },
-  appName: { fontSize: Font.xxl + 6, fontWeight: '800', color: Colors.white },
-  tagline: { fontSize: Font.md, color: '#A8CDE6', marginTop: 4 },
-  card: {
-    width: '100%', maxWidth: 380,
-    backgroundColor: Colors.white,
-    borderRadius: Radius.xl, padding: 28,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12, shadowRadius: 12, elevation: 6,
-  },
-  cardTitle: { fontSize: Font.xl, fontWeight: '700', color: Colors.textPrimary, marginBottom: 20 },
+  root: { flex: 1, backgroundColor: Colors.white },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 56, paddingBottom: 40 },
+  backBtn: { marginBottom: 32 },
+  backTxt: { fontSize: Font.sm, color: Colors.primary, fontWeight: '600' },
+  title: { fontSize: Font.hero, fontWeight: '700', color: Colors.textPrimary, letterSpacing: -0.5 },
+  subtitle: { fontSize: Font.sm, color: Colors.textMuted, marginTop: 6, marginBottom: 32 },
   erroMsg: {
     fontSize: Font.sm, color: Colors.danger,
-    backgroundColor: '#FDE8E8', borderRadius: Radius.sm,
-    padding: 10, marginBottom: 14,
+    backgroundColor: '#FEF2F2', borderRadius: Radius.sm,
+    padding: 12, marginBottom: 16,
   },
-  label: { fontSize: Font.sm, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6, marginTop: 4 },
+  label: {
+    fontSize: Font.sm, fontWeight: '600',
+    color: Colors.textSecondary, marginBottom: 8, marginTop: 4,
+  },
   input: {
     backgroundColor: Colors.bg,
-    borderRadius: Radius.md, padding: 14,
+    borderRadius: Radius.md, padding: 15,
     fontSize: Font.md, color: Colors.textPrimary,
-    marginBottom: 12,
-    borderWidth: 1, borderColor: Colors.border,
+    marginBottom: 16, borderWidth: 1, borderColor: Colors.border,
   },
   btn: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.primary,
     borderRadius: Radius.md, padding: 16,
     alignItems: 'center', marginTop: 8,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08, shadowRadius: 6, elevation: 3,
   },
-  btnText: { color: Colors.white, fontSize: Font.lg, fontWeight: '700' },
-  linkBtn: { marginTop: 20, alignItems: 'center' },
-  linkText: { fontSize: Font.md, color: Colors.textSecondary },
-  linkBold: { color: Colors.primary, fontWeight: '700' },
+  btnText: { color: Colors.white, fontSize: Font.md, fontWeight: '600' },
+  linkBtn: { marginTop: 24, alignItems: 'center' },
+  linkText: { fontSize: Font.sm, color: Colors.textMuted },
+  linkBold: { color: Colors.primary, fontWeight: '600' },
 });
