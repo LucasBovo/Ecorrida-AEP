@@ -1,179 +1,181 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, Alert,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Colors, Font, Radius } from '../utils/theme';
+import { CaronasStore } from '../data/caronasStore';
+import { CaronaOferta } from '../utils/knn';
+
+interface MatchView {
+  carona: CaronaOferta;
+  status: 'aguardando' | 'confirmada';
+}
 
 export default function MatchesScreen() {
-  const [minhasCaronas, setMinhasCaronas] = useState([
-    {
-      id: 1,
-      tipo: "Confirmada",
-      nome: "Ana Silva",
-      rota: "Universidade → Terminal Central",
-      horario: "14:30",
-      status: "Em andamento",
-      preco: "R$ 8,00",
-    },
-    {
-      id: 2,
-      tipo: "Aguardando",
-      nome: "Lucas Mendes",
-      rota: "Universidade → Shopping",
-      horario: "17:15",
-      status: "Aguardando confirmação",
-      preco: "R$ 10,00",
-    },
-  ]);
+  const [matches, setMatches] = useState<MatchView[]>([]);
 
-  const confirmarCarona = (id: number) => {
-    Alert.alert('✅ Sucesso', 'Carona confirmada! Boa viagem!');
+  const carregar = useCallback(() => {
+    const ms = CaronasStore.getMatches();
+    const views: MatchView[] = ms.map(m => ({
+      carona: CaronasStore.getCaronaById(m.caronaId)!,
+      status: m.status,
+    })).filter(m => m.carona);
+    setMatches(views);
+  }, []);
+
+  useFocusEffect(carregar);
+
+  const confirmar = (id: string) => {
+    CaronasStore.confirmarMatch(id);
+    carregar();
+    Alert.alert('✅ Confirmado!', 'Carona confirmada. Boa viagem!');
   };
 
-  const cancelarCarona = (id: number) => {
-    Alert.alert('Tem certeza?', 'Deseja cancelar esta carona?', [
+  const cancelar = (id: string) => {
+    Alert.alert('Cancelar carona', 'Tem certeza?', [
       { text: 'Não' },
-      { text: 'Sim, cancelar', onPress: () => Alert.alert('Carona cancelada.') }
+      { text: 'Sim', style: 'destructive', onPress: () => { CaronasStore.cancelarMatch(id); carregar(); } },
     ]);
   };
 
+  const statusCor = (s: string) => s === 'confirmada' ? Colors.accent : Colors.warning;
+  const statusLabel = (s: string) => s === 'confirmada' ? '✅ Confirmada' : '⏳ Aguardando';
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>Meus Matches</Text>
-        <Text style={styles.subtitle}>Caronas conectadas por IA</Text>
+        <Text style={styles.headerTitle}>Meus Matches</Text>
+        <Text style={styles.headerSub}>{matches.length} carona{matches.length !== 1 ? 's' : ''} conectada{matches.length !== 1 ? 's' : ''} pelo KNN</Text>
       </View>
 
-      <View style={styles.content}>
-        {minhasCaronas.length === 0 ? (
-          <Text style={styles.empty}>Nenhuma carona no momento</Text>
+      <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+        {matches.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyEmoji}>🤝</Text>
+            <Text style={styles.emptyTitle}>Nenhum match ainda</Text>
+            <Text style={styles.emptySub}>
+              Busque caronas e solicite para aparecer aqui.
+            </Text>
+          </View>
         ) : (
-          minhasCaronas.map((carona) => (
+          matches.map(({ carona, status }) => (
             <View key={carona.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{carona.nome}</Text>
-                <Text style={[
-                  styles.status, 
-                  carona.tipo === 'Confirmada' ? styles.statusConfirmada : styles.statusAguardando
-                ]}>
-                  {carona.tipo}
-                </Text>
+              <View style={styles.cardTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.motoristaNome}>{carona.motorista}</Text>
+                  <Text style={styles.ra}>RA {carona.ra}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: statusCor(status) + '18', borderColor: statusCor(status) }]}>
+                  <Text style={[styles.statusTxt, { color: statusCor(status) }]}>
+                    {statusLabel(status)}
+                  </Text>
+                </View>
               </View>
 
-              <Text style={styles.rota}>{carona.rota}</Text>
-              <Text style={styles.info}>🕒 {carona.horario} • {carona.preco}</Text>
+              <View style={styles.routeBox}>
+                <View style={styles.routeLine}>
+                  <View style={styles.dotBlue} />
+                  <Text style={styles.routeTxt}>{carona.origemNome}</Text>
+                </View>
+                <View style={styles.routeBar} />
+                <View style={styles.routeLine}>
+                  <View style={styles.dotGreen} />
+                  <Text style={styles.routeTxt}>{carona.destinoNome}</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.chip}>🕒 {carona.horario}</Text>
+                <Text style={styles.chip}>🚗 {carona.veiculo}</Text>
+                <Text style={styles.chip}>💵 R$ {carona.preco.toFixed(2)}</Text>
+                <Text style={styles.chip}>⭐ {carona.rating}</Text>
+              </View>
 
               <View style={styles.actions}>
-                {carona.tipo === 'Aguardando' && (
-                  <TouchableOpacity style={styles.confirmButton} onPress={() => confirmarCarona(carona.id)}>
-                    <Text style={styles.confirmText}>✅ Confirmar</Text>
+                {status === 'aguardando' && (
+                  <TouchableOpacity
+                    style={styles.btnConfirmar}
+                    onPress={() => confirmar(carona.id)}
+                  >
+                    <Text style={styles.btnConfirmarTxt}>Confirmar</Text>
                   </TouchableOpacity>
                 )}
-                
-                <TouchableOpacity style={styles.cancelButton} onPress={() => cancelarCarona(carona.id)}>
-                  <Text style={styles.cancelText}>Cancelar</Text>
+                <TouchableOpacity
+                  style={[styles.btnCancelar, status === 'confirmada' && { flex: 1 }]}
+                  onPress={() => cancelar(carona.id)}
+                >
+                  <Text style={styles.btnCancelarTxt}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))
         )}
-      </View>
-    </ScrollView>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  root: { flex: 1, backgroundColor: Colors.bg },
   header: {
-    backgroundColor: '#0066cc',
-    padding: 35,
-    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingTop: 56, paddingBottom: 24, paddingHorizontal: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#e6f0ff',
-    marginTop: 8,
-  },
-  content: {
-    padding: 20,
-  },
+  headerTitle: { fontSize: Font.xxl, fontWeight: '800', color: Colors.white },
+  headerSub: { fontSize: Font.sm, color: '#A8CDE6', marginTop: 4 },
+  body: { padding: 20 },
+
+  empty: { alignItems: 'center', paddingTop: 80 },
+  emptyEmoji: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: Font.xl, fontWeight: '700', color: Colors.textPrimary },
+  emptySub: { fontSize: Font.md, color: Colors.textMuted, textAlign: 'center', marginTop: 8, maxWidth: 260 },
+
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 3,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl, padding: 18,
+    marginBottom: 16,
+    shadowColor: '#0A5C8A', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08, shadowRadius: 10, elevation: 4,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  motoristaNome: { fontSize: Font.lg, fontWeight: '700', color: Colors.textPrimary },
+  ra: { fontSize: Font.xs, color: Colors.textMuted, marginTop: 2 },
+  statusBadge: {
+    borderWidth: 1.5, borderRadius: Radius.full,
+    paddingHorizontal: 10, paddingVertical: 4,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  statusTxt: { fontSize: Font.xs, fontWeight: '700' },
+
+  routeBox: {
+    backgroundColor: Colors.bg, borderRadius: Radius.md,
+    padding: 12, marginBottom: 12,
   },
-  status: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
+  routeLine: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  routeBar: { width: 2, height: 12, backgroundColor: Colors.border, marginLeft: 4, marginVertical: 2 },
+  dotBlue: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.primary },
+  dotGreen: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.accent },
+  routeTxt: { fontSize: Font.sm, color: Colors.textSecondary, flex: 1 },
+
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  chip: {
+    fontSize: Font.xs, color: Colors.textSecondary,
+    backgroundColor: Colors.bg, borderRadius: Radius.full,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: Colors.border, fontWeight: '500',
   },
-  statusConfirmada: {
-    backgroundColor: '#d4edda',
-    color: '#155724',
+  actions: { flexDirection: 'row', gap: 10 },
+  btnConfirmar: {
+    flex: 1, backgroundColor: Colors.accent,
+    borderRadius: Radius.md, padding: 12, alignItems: 'center',
   },
-  statusAguardando: {
-    backgroundColor: '#fff3cd',
-    color: '#856404',
+  btnConfirmarTxt: { color: Colors.white, fontWeight: '700', fontSize: Font.md },
+  btnCancelar: {
+    flex: 1, backgroundColor: '#FDE8E8',
+    borderRadius: Radius.md, padding: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.danger + '40',
   },
-  rota: {
-    fontSize: 16,
-    color: '#0066cc',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  info: {
-    fontSize: 15,
-    color: '#555',
-    marginBottom: 15,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  confirmButton: {
-    flex: 1,
-    backgroundColor: '#00cc66',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  confirmText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#ff4444',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: 18,
-    color: '#888',
-    marginTop: 50,
-  },
+  btnCancelarTxt: { color: Colors.danger, fontWeight: '700', fontSize: Font.md },
 });

@@ -1,162 +1,206 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, ScrollView, Alert,
+} from 'react-native';
+import { Colors, Font, Radius } from '../utils/theme';
+import { CaronasStore, DESTINOS_PADRAO } from '../data/caronasStore';
+import { CaronaOferta, Coordenada } from '../utils/knn';
 
-export default function OferecerCaronaScreen() {
-  const [origem, setOrigem] = useState('');
-  const [destino, setDestino] = useState('');
+export default function OferecerCaronaScreen({ navigation }: any) {
+  const [origemIdx, setOrigemIdx] = useState<number | null>(null);
+  const [destinoIdx, setDestinoIdx] = useState<number | null>(null);
   const [horario, setHorario] = useState('');
   const [vagas, setVagas] = useState('');
   const [preco, setPreco] = useState('');
   const [veiculo, setVeiculo] = useState('');
+  const [erro, setErro] = useState('');
 
-  const handleOferecer = () => {
-    if (!origem || !destino || !horario || !vagas || !preco || !veiculo) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
-      return;
+  const validarHorario = (h: string) => /^\d{2}:\d{2}$/.test(h);
+
+  const publicar = () => {
+    if (origemIdx === null || destinoIdx === null || !horario || !vagas || !preco || !veiculo) {
+      setErro('Preencha todos os campos antes de publicar.'); return;
     }
+    if (!validarHorario(horario)) {
+      setErro('Horário inválido. Use o formato HH:MM (ex: 14:30).'); return;
+    }
+    if (origemIdx === destinoIdx) {
+      setErro('Origem e destino não podem ser o mesmo local.'); return;
+    }
+    setErro('');
+
+    const novaCarona: CaronaOferta = {
+      id: `c_${Date.now()}`,
+      motorista: 'Você',
+      ra: '25362250-2',
+      veiculo: veiculo.trim(),
+      origemNome: DESTINOS_PADRAO[origemIdx].nome,
+      origemCoord: DESTINOS_PADRAO[origemIdx].coord,
+      destinoNome: DESTINOS_PADRAO[destinoIdx].nome,
+      destinoCoord: DESTINOS_PADRAO[destinoIdx].coord,
+      horario: horario.trim(),
+      vagas: parseInt(vagas, 10),
+      preco: parseFloat(preco.replace(',', '.')),
+      rating: 5.0,
+    };
+
+    CaronasStore.addCarona(novaCarona);
 
     Alert.alert(
-      '✅ Carona Publicada!', 
-      'Sua carona foi publicada com sucesso!\nA IA está procurando estudantes compatíveis.',
-      [{ text: 'OK' }]
+      '✅ Carona publicada!',
+      `Sua carona de ${novaCarona.origemNome} para ${novaCarona.destinoNome} às ${novaCarona.horario} foi publicada.\n\nO KNN irá conectá-la com estudantes compatíveis.`,
+      [{ text: 'Ver caronas', onPress: () => navigation.navigate('Buscar') }, { text: 'OK' }]
     );
 
-    // Limpa os campos após publicar
-    setOrigem('');
-    setDestino('');
-    setHorario('');
-    setVagas('');
-    setPreco('');
-    setVeiculo('');
+    setOrigemIdx(null); setDestinoIdx(null);
+    setHorario(''); setVagas(''); setPreco(''); setVeiculo('');
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>Oferecer Carona</Text>
-        <Text style={styles.subtitle}>Compartilhe sua rota e ajude o planeta</Text>
+        <Text style={styles.headerTitle}>Oferecer Carona</Text>
+        <Text style={styles.headerSub}>Sua rota entrará no algoritmo KNN</Text>
       </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Local de Saída</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: Universidade Federal - Bloco C"
-          value={origem}
-          onChangeText={setOrigem}
-        />
+      <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+        {erro ? <Text style={styles.erroMsg}>{erro}</Text> : null}
 
-        <Text style={styles.label}>Destino</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: Terminal Rodoviário"
-          value={destino}
-          onChangeText={setDestino}
-        />
+        {/* Origem */}
+        <Text style={styles.label}>📍  Ponto de partida</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+          {DESTINOS_PADRAO.map((d, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.chip, origemIdx === i && styles.chipSelected]}
+              onPress={() => { setOrigemIdx(i); setErro(''); }}
+            >
+              <Text style={[styles.chipText, origemIdx === i && styles.chipTextSelected]}>
+                {d.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        <Text style={styles.label}>Horário de Saída</Text>
+        {/* Destino */}
+        <Text style={styles.label}>🏁  Destino</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+          {DESTINOS_PADRAO.map((d, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.chip, destinoIdx === i && styles.chipSelected]}
+              onPress={() => { setDestinoIdx(i); setErro(''); }}
+            >
+              <Text style={[styles.chipText, destinoIdx === i && styles.chipTextSelected]}>
+                {d.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Campos de texto */}
+        <Text style={styles.label}>🕒  Horário de saída</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ex: 14:20"
+          placeholder="14:30"
+          placeholderTextColor={Colors.textMuted}
           value={horario}
-          onChangeText={setHorario}
+          onChangeText={(v) => { setHorario(v); setErro(''); }}
+          keyboardType="numeric"
+          maxLength={5}
         />
 
         <View style={styles.row}>
           <View style={styles.half}>
-            <Text style={styles.label}>Vagas Disponíveis</Text>
+            <Text style={styles.label}>💺  Vagas</Text>
             <TextInput
               style={styles.input}
-              placeholder="1-4"
+              placeholder="1 – 4"
+              placeholderTextColor={Colors.textMuted}
               value={vagas}
-              onChangeText={setVagas}
+              onChangeText={(v) => { setVagas(v); setErro(''); }}
               keyboardType="numeric"
+              maxLength={1}
             />
           </View>
-
           <View style={styles.half}>
-            <Text style={styles.label}>Preço por Pessoa</Text>
+            <Text style={styles.label}>💵  Preço (R$)</Text>
             <TextInput
               style={styles.input}
-              placeholder="R$ 8,00"
+              placeholder="8,00"
+              placeholderTextColor={Colors.textMuted}
               value={preco}
-              onChangeText={setPreco}
+              onChangeText={(v) => { setPreco(v); setErro(''); }}
               keyboardType="numeric"
             />
           </View>
         </View>
 
-        <Text style={styles.label}>Modelo do Veículo</Text>
+        <Text style={styles.label}>🚗  Veículo</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ex: Onix 2023 - Branco"
+          placeholder="Ex: Onix 2023 – Branco"
+          placeholderTextColor={Colors.textMuted}
           value={veiculo}
-          onChangeText={setVeiculo}
+          onChangeText={(v) => { setVeiculo(v); setErro(''); }}
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleOferecer}>
-          <Text style={styles.buttonText}>🚗 PUBLICAR CARONA</Text>
+        <TouchableOpacity style={styles.btn} onPress={publicar} activeOpacity={0.85}>
+          <Text style={styles.btnText}>Publicar carona</Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  root: { flex: 1, backgroundColor: Colors.bg },
   header: {
-    backgroundColor: '#0066cc',
-    padding: 35,
-    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingTop: 56, paddingBottom: 24,
+    paddingHorizontal: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#e6f0ff',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  form: {
-    padding: 20,
+  headerTitle: { fontSize: Font.xxl, fontWeight: '800', color: Colors.white },
+  headerSub: { fontSize: Font.sm, color: '#A8CDE6', marginTop: 4 },
+  body: { padding: 20 },
+  erroMsg: {
+    fontSize: Font.sm, color: Colors.danger,
+    backgroundColor: '#FDE8E8', borderRadius: Radius.sm,
+    padding: 12, marginBottom: 16,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-    marginTop: 12,
+    fontSize: Font.sm, fontWeight: '700',
+    color: Colors.textSecondary, marginBottom: 8, marginTop: 16,
   },
+  chips: { marginBottom: 4 },
+  chip: {
+    borderWidth: 1.5, borderColor: Colors.border,
+    borderRadius: Radius.full, paddingHorizontal: 14,
+    paddingVertical: 8, marginRight: 8,
+    backgroundColor: Colors.white,
+  },
+  chipSelected: {
+    backgroundColor: Colors.primary, borderColor: Colors.primary,
+  },
+  chipText: { fontSize: Font.sm, color: Colors.textSecondary, fontWeight: '500' },
+  chipTextSelected: { color: Colors.white, fontWeight: '700' },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    fontSize: 16,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md, padding: 14,
+    fontSize: Font.md, color: Colors.textPrimary,
+    borderWidth: 1.5, borderColor: Colors.border,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+  row: { flexDirection: 'row', gap: 12 },
+  half: { flex: 1 },
+  btn: {
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.md, padding: 18,
+    alignItems: 'center', marginTop: 28,
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 8, elevation: 5,
   },
-  half: {
-    flex: 1,
-  },
-  button: {
-    backgroundColor: '#00cc66',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  btnText: { color: Colors.white, fontSize: Font.lg, fontWeight: '800' },
 });
